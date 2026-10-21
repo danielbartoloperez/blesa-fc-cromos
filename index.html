@@ -509,7 +509,7 @@
           <div class="pack-half top"></div>
           <div class="pack-half bottom"></div>
         </div>
-        <div class="pack-cta">Toca para abrir</div>
+        <div class="pack-cta">Toca para rasgar</div>
       </div>
 
       <!-- 2. PANTALLA REVELACIÓN CROMOS -->
@@ -696,10 +696,10 @@
       const shuffledPlayers = [...playersPool].sort(() => 0.5 - Math.random());
 
       // Probabilidades:
-      // Afición (Super Raro): 1% de probabilidad
-      // Escudo (Raro): 5% de probabilidad
-      const rollAficion = Math.random() < 0.01;
-      const rollEscudo = Math.random() < 0.05;
+      // Afición (Super Raro): 8% de probabilidad
+      // Escudo (Raro): 20% de probabilidad
+      const rollAficion = Math.random() < 0.08;
+      const rollEscudo = Math.random() < 0.50;
 
       if (rollAficion) pack.push(specialAficion);
       if (rollEscudo) pack.push(specialEscudo);
@@ -716,10 +716,22 @@
     /* ========================================================
        ANIMACIÓN DE APERTURA Y REVELACIÓN
        ======================================================== */
+    let gyroAsked = false;
+    function requestGyroPermission() {
+      if (gyroAsked) return;
+      gyroAsked = true;
+      // iOS exige pedir permiso explícito para el giroscopio
+      if (typeof DeviceOrientationEvent !== "undefined" &&
+          typeof DeviceOrientationEvent.requestPermission === "function") {
+        DeviceOrientationEvent.requestPermission().catch(() => {});
+      }
+    }
+
     function triggerOpenPack() {
       if (isOpening) return;
       isOpening = true;
       initAudio();
+      requestGyroPermission();
       playRipSound();
       incrementGlobalCount();
 
