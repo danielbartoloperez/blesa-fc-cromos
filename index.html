@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Blesa F.C. - Apertura de Sobres</title>
+  <style>
+    :root {
+      --primary: #f59e0b;
+      --primary-dark: #b45309;
+      --gold: #ffd700;
+      --gold-glow: rgba(255, 215, 0, 0.65);
+      --purple-glow: rgba(168, 85, 247, 0.7);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #ffffff;
+      background: #090d16 url('img/fondo.png') center/cover no-repeat fixed;
+      position: relative;
+    }
+
+    /* Velo oscuro para legibilidad sobre el fondo */
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(10, 15, 29, 0.75) 0%, rgba(5, 8, 16, 0.92) 50%);
+      backdrop-filter: blur(4px);
+      z-index: 0;
+    }
+
+    .main-app {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 24px;
+    }
+
+    /* Barra Superior: Contador Global */
+    .top-bar {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .team-badge {
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--primary);
+      text-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+    }
+
+    .global-counter {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #cbd5e1;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .counter-highlight {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    /* ÁREA CENTRAL INTERACTIVA */
+    .center-stage {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* 1. VISTA SOBRE (CONFIGURADO EN HORIZONTAL) */
+    #pack-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .pack-container {
+      position: relative;
+      /* Ajuste horizontal: más ancho y proporción 5:4 */
+      width: 340px;
+      max-width: 86vw;
+      aspect-ratio: 5 / 4; 
+      filter: drop-shadow(0 20px 35px rgba(0,0,0,0.85));
+      transition: transform 0.2s ease;
+    }
+
+    .pack-container:active {
+      transform: scale(0.97);
+    }
+
+    /* Mitades para efecto de desgarro */
+    .pack-half {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-image: url('img/sobre.png');
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+    }
+
+    .pack-half.top {
+      clip-path: polygon(0 0, 100% 0, 100% 42%, 75% 38%, 50% 43%, 25% 37%, 0 41%);
+    }
+
+    .pack-half.bottom {
+      clip-path: polygon(0 41%, 25% 37%, 50% 43%, 75% 38%, 100% 42%, 100% 100%, 0 100%);
+    }
+
+    /* Rasgado activo */
+    .ripping .pack-half.top {
+      transform: translateY(-80px) rotate(-6deg) scale(0.92);
+      opacity: 0;
+    }
+
+    .ripping .pack-half.bottom {
+      transform: translateY(90px) rotate(5deg) scale(0.9);
+      opacity: 0;
+    }
+
+    .pack-cta {
+      margin-top: 26px;
+      font-size: 0.88rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--primary);
+      animation: pulse 1.6s infinite ease-in-out;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      padding: 8px 18px;
+      border-radius: 20px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.97); }
+    }
+
+    /* 2. VISTA CROMOS (un solo cromo visible, boca abajo -> flip) */
+    #cards-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      justify-content: center;
+    }
+
+    .pack-progress {
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #94a3b8;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    .card-deck {
+      position: relative;
+      width: 90vw;
+      max-width: 360px;
+      aspect-ratio: 5 / 4;
+      perspective: 1200px;
+    }
+
+    .card-wrapper {
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 14px 35px rgba(0,0,0,0.7);
+      transition: transform 0.35s ease-in, opacity 0.35s ease, box-shadow 0.6s ease;
+      animation: cardIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(30px) scale(0.92); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .card-tilt {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out;
+    }
+
+    .card-flip {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(0.3, 1.15, 0.4, 1);
+    }
+
+    .card-wrapper.flipped .card-flip { transform: rotateY(180deg); }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #111827;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .card-front { transform: rotateY(180deg); }
+
+    .card-face img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* Brillo holográfico (solo en la cara delantera) */
+    .card-sheen {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background: linear-gradient(
+        115deg,
+        transparent 25%,
+        rgba(255, 255, 255, 0.35) 45%,
+        rgba(255, 255, 255, 0.6) 50%,
+        rgba(255, 255, 255, 0.35) 55%,
+        transparent 75%
+      );
+      background-size: 200% 200%;
+      background-position: 50% 50%;
+      mix-blend-mode: overlay;
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    /* Especiales: el resplandor solo aparece al dar la vuelta */
+    .card-wrapper.revealed.card-special-escudo {
+      box-shadow: 0 0 0 2px var(--gold), 0 0 35px var(--gold-glow), 0 14px 35px rgba(0,0,0,0.8);
+    }
+    .card-special-escudo .card-sheen {
+      opacity: 0.85;
+      background: linear-gradient(125deg, transparent 20%, rgba(255, 215, 0, 0.5) 45%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 215, 0, 0.5) 55%, transparent 80%);
+      background-size: 200% 200%;
+    }
+
+    .card-wrapper.revealed.card-special-aficion {
+      box-shadow: 0 0 0 2px #c084fc, 0 0 40px var(--purple-glow), 0 14px 35px rgba(0,0,0,0.8);
+    }
+    .card-special-aficion .card-sheen {
+      opacity: 0.95;
+      background: linear-gradient(135deg, rgba(255,0,128,0.4), rgba(0,255,255,0.4), rgba(255,255,0,0.4));
+      background-size: 200% 200%;
+    }
+
+    .badge-special {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      z-index: 10;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .badge-escudo { background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; }
+    .badge-aficion { background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; }
+
+    /* Cromo que sale volando */
+    .card-wrapper.thrown {
+      transform: translateX(140%) rotate(18deg) scale(0.9) !important;
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+
+    .tap-hint {
+      margin-top: 14px;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ===== EFECTOS ESPECIALES ===== */
+    .card-wrapper { isolation: isolate; }
+
+    #bg-glow {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      opacity: 0; transition: opacity 0.9s ease;
+    }
+    #bg-glow.on { opacity: 1; }
+    #bg-glow.gold   { background: radial-gradient(circle at 50% 50%, rgba(255, 200, 0, 0.38) 0%, rgba(245, 158, 11, 0.12) 45%, transparent 75%); }
+    #bg-glow.purple { background: radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.5) 0%, rgba(236, 72, 153, 0.18) 45%, transparent 75%); }
+
+    #fx-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+
+    /* Suspense: el reverso late y tiembla antes del flip */
+    .card-wrapper.teaser { animation: teaserGlow 1.1s ease-in-out infinite; }
+    .card-wrapper.teaser .card-tilt { animation: tremble 0.12s linear infinite alternate; }
+    @keyframes teaserGlow {
+      0%, 100% { box-shadow: 0 14px 35px rgba(0,0,0,0.7), 0 0 8px rgba(255, 236, 170, 0.35); }
+      50%      { box-shadow: 0 14px 35px rgba(0,0,0,0.7), 0 0 40px 6px rgba(255, 236, 170, 0.9); }
+    }
+    @keyframes tremble {
+      from { transform: rotate(-0.8deg) translateX(-1px); }
+      to   { transform: rotate(0.8deg) translateX(1px); }
+    }
+
+    /* Destello blanco al voltear */
+    .card-flash {
+      position: absolute; inset: 0; border-radius: 12px; z-index: 3;
+      pointer-events: none; opacity: 0;
+    }
+    .card-special-escudo .card-flash  { background: radial-gradient(circle, #fff 0%, #ffe066 55%, #f59e0b 100%); }
+    .card-special-aficion .card-flash { background: radial-gradient(circle, #fff 0%, #f0abfc 45%, #22d3ee 100%); }
+    .card-wrapper.revealed.card-special-escudo .card-flash,
+    .card-wrapper.revealed.card-special-aficion .card-flash { animation: flash 0.8s 0.28s ease-out both; }
+    @keyframes flash { 0% { opacity: 0; } 25% { opacity: 0.95; } 100% { opacity: 0; } }
+
+    /* Rebote + resplandor que respira */
+    .card-wrapper.revealed.card-special-escudo  { animation: pop 0.6s 0.3s ease-out, pulseGold 2.2s 1s ease-in-out infinite; }
+    .card-wrapper.revealed.card-special-aficion { animation: pop 0.6s 0.3s ease-out, pulsePurple 1.8s 1s ease-in-out infinite; }
+    @keyframes pop { 0%, 100% { transform: scale(1); } 40% { transform: scale(1.09); } }
+    @keyframes pulseGold {
+      0%, 100% { box-shadow: 0 0 0 2px var(--gold), 0 0 30px var(--gold-glow), 0 14px 35px rgba(0,0,0,0.8); }
+      50%      { box-shadow: 0 0 0 2px var(--gold), 0 0 65px 8px var(--gold-glow), 0 14px 35px rgba(0,0,0,0.8); }
+    }
+    @keyframes pulsePurple {
+      0%, 100% { box-shadow: 0 0 0 2px #c084fc, 0 0 35px var(--purple-glow), 0 14px 35px rgba(0,0,0,0.8); }
+      50%      { box-shadow: 0 0 0 2px #f0abfc, 0 0 75px 10px var(--purple-glow), 0 14px 35px rgba(0,0,0,0.8); }
+    }
+
+    /* Franja de brillo que barre el cromo */
+    .card-glint {
+      position: absolute; top: 0; bottom: 0; left: 0; width: 45%; z-index: 3;
+      pointer-events: none; opacity: 0;
+      background: linear-gradient(105deg, transparent, rgba(255,255,255,0.6), transparent);
+      transform: translateX(-160%) skewX(-15deg);
+    }
+    .card-wrapper.revealed.card-special-escudo .card-glint,
+    .card-wrapper.revealed.card-special-aficion .card-glint { animation: glint 3s 1.1s ease-in-out infinite; }
+    @keyframes glint {
+      0%   { transform: translateX(-160%) skewX(-15deg); opacity: 1; }
+      45%, 100% { transform: translateX(330%) skewX(-15deg); opacity: 1; }
+    }
+
+    /* Rayos de luz detrás del cromo (solo Afición) */
+    .card-rays {
+      position: absolute; left: 50%; top: 50%; width: 240%; aspect-ratio: 1;
+      z-index: -1; pointer-events: none; opacity: 0;
+      transform: translate(-50%, -50%);
+      background: repeating-conic-gradient(rgba(255,80,200,0.38) 0 6deg, transparent 6deg 12deg, rgba(80,220,255,0.32) 12deg 18deg, transparent 18deg 24deg);
+      -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 62%);
+      mask-image: radial-gradient(circle, #000 0%, transparent 62%);
+      transition: opacity 1s 0.3s ease;
+    }
+    .card-wrapper.revealed .card-rays { opacity: 1; animation: spinRays 14s linear infinite; }
+    @keyframes spinRays {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to   { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* 3. VISTA RESUMEN FINAL */
+    #summary-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      justify-content: center;
+    }
+
+    .summary-heading {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #f8fafc;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      width: 100%;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding: 6px;
+    }
+
+    .grid-card {
+      position: relative;
+      aspect-ratio: 5 / 4;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #1e293b;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .grid-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .grid-card.special-escudo {
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 15px var(--gold-glow);
+    }
+
+    .grid-card.special-aficion {
+      border: 2px solid #c084fc;
+      box-shadow: 0 0 15px var(--purple-glow);
+    }
+
+    .btn-reopen {
+      margin-top: 18px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border: none;
+      color: #0b0f19;
+      font-weight: 900;
+      padding: 13px 30px;
+      border-radius: 50px;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.45);
+      transition: transform 0.2s ease;
+    }
+
+    .btn-reopen:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+  <div id="bg-glow"></div>
+  <canvas id="fx-canvas"></canvas>
+
+  <div class="main-app">
+    <!-- CONTADOR GLOBAL Y LOGO -->
+    <header class="top-bar">
+      <div class="team-badge">BLESA F.C.</div>
+      <div class="global-counter">
+        <span>Sobres abiertos: <strong class="counter-highlight" id="packs-count">-</strong></span>
+        <span>•</span>
+        <span>Cromos: <strong class="counter-highlight" id="cards-count">-</strong></span>
+      </div>
+    </header>
+
+    <main class="center-stage">
+      <!-- 1. PANTALLA SOBRE -->
+      <div id="pack-view" onclick="triggerOpenPack()">
+        <div class="pack-container" id="pack-element">
+          <div class="pack-half top"></div>
+          <div class="pack-half bottom"></div>
+        </div>
+        <div class="pack-cta">Toca para rasgar</div>
+      </div>
+
+      <!-- 2. PANTALLA REVELACIÓN CROMOS -->
+      <div id="cards-view">
+        <div class="pack-progress" id="card-progress">CROMO 1 DE 6</div>
+        <div class="card-deck" id="card-deck"></div>
+        <div class="tap-hint">
+          <span id="tap-hint-text">Toca el cromo para darle la vuelta</span>
+        </div>
+      </div>
+
+      <!-- 3. PANTALLA RESUMEN -->
+      <div id="summary-view">
+        <h2 class="summary-heading">¡Sobre completado!</h2>
+        <div class="summary-grid" id="summary-grid"></div>
+        <button class="btn-reopen" onclick="resetToPack()">Abrir otro sobre</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    /* ========================================================
+       CONFIGURACIÓN DE JUGADORES Y ESPECIALES (BLESA F.C.)
+       ======================================================== */
+    const playersPool = [
+      { id: "p1",  src: "img/cromo1.png",  type: "normal" },
+      { id: "p2",  src: "img/cromo2.png",  type: "normal" },
+      { id: "p3",  src: "img/cromo3.png",  type: "normal" },
+      { id: "p4",  src: "img/cromo4.png",  type: "normal" },
+      { id: "p5",  src: "img/cromo5.png",  type: "normal" },
+      { id: "p6",  src: "img/cromo6.png",  type: "normal" },
+      { id: "p7",  src: "img/cromo7.png",  type: "normal" },
+      { id: "p8",  src: "img/cromo8.png",  type: "normal" },
+      { id: "p9",  src: "img/cromo9.png",  type: "normal" },
+      { id: "p10", src: "img/cromo10.png", type: "normal" },
+      { id: "p11", src: "img/cromo11.png", type: "normal" },
+      { id: "p12", src: "img/cromo12.png", type: "normal" },
+      { id: "p13", src: "img/cromo13.png", type: "normal" },
+      { id: "p14", src: "img/cromo14.png", type: "normal" },
+      { id: "p15", src: "img/cromo15.png", type: "normal" },
+      { id: "p16", src: "img/cromo16.png", type: "normal" }
+    ];
+
+    const specialEscudo = { id: "escudo",  src: "img/escudo.png",  type: "escudo",  label: "★ Escudo" };
+    const specialAficion = { id: "aficion", src: "img/aficion.png", type: "aficion", label: "★ Afición" };
+
+    let currentPack = [];
+    let currentCardIndex = 0;
+    let audioContext = null;
+    let isOpening = false;
+
+    // Inclinación 3D actual
+    let tiltX = 0;
+    let tiltY = 0;
+
+    /* ========================================================
+       CONTADOR GLOBAL EN TIEMPO REAL
+       ======================================================== */
+    const COUNTER_NAMESPACE = "blesafc_cards_pack_counter_v1";
+
+    async function fetchGlobalCount() {
+      try {
+        const res = await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/packs`);
+        if (res.ok) {
+          const data = await res.json();
+          renderCounters(data.count || 1);
+        } else {
+          fallbackLocalCounter(false);
+        }
+      } catch (e) {
+        fallbackLocalCounter(false);
+      }
+    }
+
+    async function incrementGlobalCount() {
+      try {
+        const res = await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/packs/up`);
+        if (res.ok) {
+          const data = await res.json();
+          renderCounters(data.count);
+          return;
+        }
+      } catch (e) {}
+      fallbackLocalCounter(true);
+    }
+
+    function fallbackLocalCounter(increment) {
+      let current = parseInt(localStorage.getItem("blesa_fallback_count") || "12");
+      if (increment) {
+        current += 1;
+        localStorage.setItem("blesa_fallback_count", current);
+      }
+      renderCounters(current);
+    }
+
+    function renderCounters(packs) {
+      const packsCountEl = document.getElementById("packs-count");
+      const cardsCountEl = document.getElementById("cards-count");
+      if (packsCountEl && cardsCountEl) {
+        packsCountEl.innerText = Number(packs).toLocaleString();
+        cardsCountEl.innerText = Number(packs * 6).toLocaleString();
+      }
+    }
+
+    /* ========================================================
+       EFECTOS DE SONIDO SINTÉTICOS (SIN ARCHIVOS EXTERNOS)
+       ======================================================== */
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+    }
+
+    // Sonido de rasgado de sobre
+    function playRipSound() {
+      if (!audioContext) return;
+      const bufferSize = audioContext.sampleRate * 0.4;
+      const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+      }
+      const noise = audioContext.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = audioContext.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(800, audioContext.currentTime);
+      filter.frequency.linearRampToValueAtTime(300, audioContext.currentTime + 0.35);
+
+      const gain = audioContext.createGain();
+      gain.gain.setValueAtTime(0.7, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.38);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioContext.destination);
+      noise.start();
+    }
+
+    // Sonido al pasar carta
+    function playCardSwipe() {
+      if (!audioContext) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(320, audioContext.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(140, audioContext.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.35, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.1);
+    }
+
+    // Sonido brillante para cromo especial
+    function playSpecialChime() {
+      if (!audioContext) return;
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((freq, idx) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, audioContext.currentTime + idx * 0.07);
+        gain.gain.setValueAtTime(0, audioContext.currentTime + idx * 0.07);
+        gain.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + idx * 0.07 + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + idx * 0.07 + 0.4);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start(audioContext.currentTime + idx * 0.07);
+        osc.stop(audioContext.currentTime + idx * 0.07 + 0.4);
+      });
+    }
+
+    /* ========================================================
+       LÓGICA DEL SOBRE Y PROBABILIDADES DE ESPECIALES
+       ======================================================== */
+    function generatePack() {
+      const pack = [];
+      const shuffledPlayers = [...playersPool].sort(() => 0.5 - Math.random());
+
+      // Probabilidades:
+      // Afición (Super Raro): 1% de probabilidad
+      // Escudo (Raro): 5% de probabilidad
+      const rollAficion = Math.random() < 0.01;
+      const rollEscudo = Math.random() < 0.05;
+
+      if (rollAficion) pack.push(specialAficion);
+      if (rollEscudo) pack.push(specialEscudo);
+
+      // Rellenar hasta tener exactamente 6 cromos únicos
+      while (pack.length < 6 && shuffledPlayers.length > 0) {
+        pack.push(shuffledPlayers.pop());
+      }
+
+      // Barajar el orden final para que el especial no salga siempre en la misma posición
+      return pack.sort(() => 0.5 - Math.random());
+    }
+
+    /* ========================================================
+       ANIMACIÓN DE APERTURA Y REVELACIÓN
+       ======================================================== */
+    function triggerOpenPack() {
+      if (isOpening) return;
+      isOpening = true;
+      initAudio();
+      playRipSound();
+      incrementGlobalCount();
+
+      const pack = document.getElementById("pack-element");
+      pack.classList.add("ripping");
+
+      setTimeout(() => {
+        document.getElementById("pack-view").style.display = "none";
+        document.getElementById("cards-view").style.display = "flex";
+        pack.classList.remove("ripping");
+        initDeck();
+        isOpening = false;
+      }, 620);
+    }
+
+    let cardFlipped = false;
+    let cardBusy = false;
+    let teaserTimer = null;
+
+    function initDeck() {
+      currentPack = generatePack();
+      currentCardIndex = 0;
+
+      // Precarga para que el flip no parpadee
+      [...currentPack.map(i => i.src), "img/reverso.png"].forEach(src => {
+        const im = new Image();
+        im.src = src;
+      });
+
+      showCard(0);
+    }
+
+    function showCard(idx) {
+      const item = currentPack[idx];
+      const deck = document.getElementById("card-deck");
+      deck.innerHTML = "";
+      currentCardIndex = idx;
+      cardFlipped = false;
+      cardBusy = true;
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "card-wrapper";
+      wrapper.id = `card-item-${idx}`;
+      if (item.type === "escudo") wrapper.classList.add("card-special-escudo");
+      if (item.type === "aficion") wrapper.classList.add("card-special-aficion");
+
+      const tilt = document.createElement("div");
+      tilt.className = "card-tilt";
+      const flip = document.createElement("div");
+      flip.className = "card-flip";
+
+      // Cara trasera (reverso, igual para todos)
+      const back = document.createElement("div");
+      back.className = "card-face card-back";
+      const backImg = document.createElement("img");
+      backImg.src = "img/reverso.png";
+      backImg.alt = "Reverso del cromo";
+      back.appendChild(backImg);
+
+      // Cara delantera
+      const front = document.createElement("div");
+      front.className = "card-face card-front";
+      const sheen = document.createElement("div");
+      sheen.className = "card-sheen";
+      sheen.id = `card-sheen-${idx}`;
+      front.appendChild(sheen);
+      if (item.type !== "normal") {
+        const glint = document.createElement("div");
+        glint.className = "card-glint";
+        front.appendChild(glint);
+        const badge = document.createElement("div");
+        badge.className = `badge-special badge-${item.type}`;
+        badge.innerText = item.label;
+        front.appendChild(badge);
+      }
+      const img = document.createElement("img");
+      img.src = item.src;
+      img.alt = `Cromo ${idx + 1}`;
+      front.appendChild(img);
+
+      flip.appendChild(back);
+      flip.appendChild(front);
+      tilt.appendChild(flip);
+      wrapper.appendChild(tilt);
+      if (item.type === "aficion") {
+        const rays = document.createElement("div");
+        rays.className = "card-rays";
+        wrapper.appendChild(rays);
+      }
+      if (item.type !== "normal") {
+        const flash = document.createElement("div");
+        flash.className = "card-flash";
+        wrapper.appendChild(flash);
+      }
+      wrapper.addEventListener("click", handleCardTap);
+      deck.appendChild(wrapper);
+
+      updateCardCounter();
+      updateHint();
+      setTimeout(() => { cardBusy = false; }, 450);
+
+      // Suspense: si el cromo es especial, el reverso empieza a latir
+      setBackgroundGlow(null);
+      clearTimeout(teaserTimer);
+      if (item.type !== "normal") {
+        teaserTimer = setTimeout(() => {
+          if (currentCardIndex === idx && !cardFlipped) {
+            wrapper.classList.add("teaser");
+            playTeaserSound();
+          }
+        }, 1000);
+      }
+    }
+
+    function handleCardTap() {
+      if (cardBusy) return;
+      const el = document.getElementById(`card-item-${currentCardIndex}`);
+      if (!el) return;
+
+      if (!cardFlipped) {
+        // 1er toque: dar la vuelta
+        cardFlipped = true;
+        cardBusy = true;
+        playCardSwipe();
+        clearTimeout(teaserTimer);
+        el.classList.remove("teaser");
+        el.classList.add("flipped", "revealed");
+        revealSpecialFx(currentPack[currentCardIndex], el);
+        updateHint();
+        setTimeout(() => { cardBusy = false; }, 600);
+      } else {
+        // 2º toque: pasar al siguiente
+        cardBusy = true;
+        playCardSwipe();
+        el.classList.add("thrown");
+        setBackgroundGlow(null);
+        setTimeout(() => {
+          if (currentCardIndex + 1 < currentPack.length) {
+            showCard(currentCardIndex + 1);
+          } else {
+            showSummaryView();
+          }
+        }, 350);
+      }
+    }
+
+    function setBackgroundGlow(color) {
+      document.getElementById("bg-glow").className = color ? `${color} on` : "";
+    }
+
+    // Sonido de tensión previo al flip
+    function playTeaserSound() {
+      if (!audioContext) return;
+      const t = audioContext.currentTime;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(110, t);
+      osc.frequency.exponentialRampToValueAtTime(420, t + 0.9);
+      gain.gain.setValueAtTime(0.001, t);
+      gain.gain.linearRampToValueAtTime(0.12, t + 0.8);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.start(t);
+      osc.stop(t + 1.0);
+    }
+
+    // Efectos al revelar un especial
+    function revealSpecialFx(item, el) {
+      if (item.type === "normal") return;
+      const isAficion = item.type === "aficion";
+      if (navigator.vibrate) navigator.vibrate(isAficion ? [80, 40, 120, 40, 220] : [70]);
+      setTimeout(() => {
+        playSpecialChime();
+        if (isAficion) setTimeout(playSpecialChime, 260);
+        setBackgroundGlow(isAficion ? "purple" : "gold");
+        const r = el.getBoundingClientRect();
+        burst(item.type, r.left + r.width / 2, r.top + r.height / 2);
+      }, 350);
+    }
+
+    /* ---- Partículas (canvas): chispas y confeti ---- */
+    const fxCanvas = document.getElementById("fx-canvas");
+    const fxCtx = fxCanvas.getContext("2d");
+    let particles = [];
+    let fxRunning = false;
+
+    function resizeFx() {
+      const d = window.devicePixelRatio || 1;
+      fxCanvas.width = window.innerWidth * d;
+      fxCanvas.height = window.innerHeight * d;
+      fxCtx.setTransform(d, 0, 0, d, 0, 0);
+    }
+
+    function burst(type, cx, cy) {
+      resizeFx();
+      const rnd = (a, b) => a + Math.random() * (b - a);
+      const sparkColors = ["#fff7b0", "#ffd700", "#f59e0b", "#ffffff"];
+      const confettiColors = ["#ff3d81", "#22d3ee", "#facc15", "#a855f7", "#4ade80", "#ffffff"];
+
+      const nSparks = type === "aficion" ? 70 : 55;
+      for (let i = 0; i < nSparks; i++) {
+        const ang = rnd(0, Math.PI * 2), sp = rnd(3, 10);
+        particles.push({
+          kind: "spark", x: cx, y: cy,
+          vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 2, g: 0.12,
+          life: 1, decay: rnd(0.012, 0.028), size: rnd(1.5, 4),
+          color: sparkColors[(Math.random() * sparkColors.length) | 0]
+        });
+      }
+      if (type === "aficion") {
+        for (let i = 0; i < 100; i++) {
+          particles.push({
+            kind: "confetti", x: cx, y: cy,
+            vx: rnd(-8, 8), vy: rnd(-16, -5), g: 0.28,
+            life: 1, decay: rnd(0.004, 0.008),
+            w: rnd(6, 11), h: rnd(4, 7), rot: rnd(0, 6.28), vr: rnd(-0.3, 0.3),
+            color: confettiColors[(Math.random() * confettiColors.length) | 0]
+          });
+        }
+      }
+      if (!fxRunning) { fxRunning = true; requestAnimationFrame(stepFx); }
+    }
+
+    function stepFx() {
+      fxCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      particles = particles.filter(p => p.life > 0 && p.y < window.innerHeight + 40);
+      for (const p of particles) {
+        p.vy += p.g; p.x += p.vx; p.y += p.vy;
+        p.vx *= 0.985; p.life -= p.decay;
+        fxCtx.globalAlpha = Math.max(p.life, 0);
+        fxCtx.fillStyle = p.color;
+        if (p.kind === "spark") {
+          fxCtx.globalCompositeOperation = "lighter";
+          fxCtx.beginPath();
+          fxCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          fxCtx.fill();
+        } else {
+          p.rot += p.vr;
+          fxCtx.globalCompositeOperation = "source-over";
+          fxCtx.save();
+          fxCtx.translate(p.x, p.y);
+          fxCtx.rotate(p.rot);
+          fxCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          fxCtx.restore();
+        }
+      }
+      fxCtx.globalAlpha = 1;
+      fxCtx.globalCompositeOperation = "source-over";
+      if (particles.length) {
+        requestAnimationFrame(stepFx);
+      } else {
+        fxRunning = false;
+        fxCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      }
+    }
+
+    function updateHint() {
+      const el = document.getElementById("tap-hint-text");
+      if (el) el.innerText = cardFlipped ? "Toca el cromo para pasar al siguiente" : "Toca el cromo para darle la vuelta";
+    }
+
+    function updateCardCounter() {
+      document.getElementById("card-progress").innerText = `CROMO ${currentCardIndex + 1} DE ${currentPack.length}`;
+    }
+
+    function showSummaryView() {
+      document.getElementById("cards-view").style.display = "none";
+      const summaryView = document.getElementById("summary-view");
+      const grid = document.getElementById("summary-grid");
+      grid.innerHTML = "";
+
+      currentPack.forEach(item => {
+        const itemBox = document.createElement("div");
+        itemBox.className = "grid-card";
+        if (item.type === "escudo") itemBox.classList.add("special-escudo");
+        if (item.type === "aficion") itemBox.classList.add("special-aficion");
+
+        const img = document.createElement("img");
+        img.src = item.src;
+        itemBox.appendChild(img);
+        grid.appendChild(itemBox);
+      });
+
+      summaryView.style.display = "flex";
+    }
+
+    function resetToPack() {
+      document.getElementById("summary-view").style.display = "none";
+      document.getElementById("pack-view").style.display = "flex";
+    }
+
+    /* ========================================================
+       EFECTO 3D CON GIROSCOPIO / MOVIMIENTO DE RATÓN
+       ======================================================== */
+    function applyCardTilt(x, y) {
+      // Solo se inclina cuando el cromo ya está boca arriba
+      if (!cardFlipped) return;
+      const card = document.getElementById(`card-item-${currentCardIndex}`);
+      if (!card || card.classList.contains("thrown")) return;
+      const tiltEl = card.querySelector(".card-tilt");
+      const sheen = card.querySelector(".card-sheen");
+
+      tiltEl.style.transform = `perspective(1000px) rotateX(${-y * 14}deg) rotateY(${x * 14}deg) scale(1.02)`;
+      if (sheen) sheen.style.backgroundPosition = `${50 + x * 40}% ${50 + y * 40}%`;
+    }
+
+    let usingGyro = false;
+
+    // Orientación en móviles (Giroscopio)
+    window.addEventListener("deviceorientation", (e) => {
+      if (e.gamma === null || e.beta === null) return;
+      usingGyro = true;
+      // Normalizamos entre -1 y 1
+      const x = Math.min(Math.max(e.gamma / 30, -1), 1);
+      const y = Math.min(Math.max((e.beta - 45) / 30, -1), 1);
+      applyCardTilt(x, y);
+    });
+
+    // Movimiento con ratón en ordenadores
+    window.addEventListener("mousemove", (e) => {
+      if (usingGyro) return;
+      const x = (e.clientX / window.innerWidth) * 2 - 1;
+      const y = (e.clientY / window.innerHeight) * 2 - 1;
+      applyCardTilt(x, y);
+    });
+
+    // Iniciar contador global al cargar la página
+    window.addEventListener("DOMContentLoaded", fetchGlobalCount);
+  </script>
+</body>
+</html>
